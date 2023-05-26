@@ -23,7 +23,7 @@ val inTensor: Tensor = Tensor.fromBlob(floatInputBuffer, longArrayOf(1, recordin
 ### 5. 加载模型获取到 Module
 
 ```
-val modelPath = assetFilePath(applicationContext, "andy-2-KS.ptl")
+val modelPath = assetFilePath(applicationContext, "speechcommand-demo.ptl.ptl")
 module = LiteModuleLoader.load(modelPath)
 ```
 
