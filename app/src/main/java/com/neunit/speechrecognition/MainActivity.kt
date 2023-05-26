@@ -21,7 +21,6 @@ import org.pytorch.Tensor
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.nio.FloatBuffer
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -30,13 +29,26 @@ class MainActivity : AppCompatActivity() {
     private var module: Module? = null
 
     private val requestAudioPermissionCode = 13
-    private val audioSeconds = 6
+    private val audioSeconds = 2
     private val audioSampleRate = 16000
     private val recordingLength = audioSampleRate * audioSeconds
 
-    private var start = 1
+    private var start = 0
     private var timer: Timer? = null
     private var timerTask: TimerTask? = null
+
+    private val keyword = mapOf<Long, String>(0L to "yes",
+        1L to "no",
+        2L to "up",
+        3L to "down",
+        4L to "left",
+        5L to "right",
+        6L to "on",
+        7L to "off",
+        8L to "stop",
+        9L to "go",
+        10L to "_silence_",
+        11L to "_unknown_")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,8 +71,12 @@ class MainActivity : AppCompatActivity() {
                 if (timerTask == null) timerTask = object : TimerTask() {
                     override fun run() {
                         runOnUiThread {
-                            btnRecognize.text = String.format("Listening - %ds", audioSeconds - start)
                             start += 1
+                            if (audioSeconds - start > 0) {
+                                btnRecognize.text = String.format("Listening - %ds", audioSeconds - start)
+                            } else {
+                                btnRecognize.text = getString(R.string.recognizing)
+                            }
                         }
                     }
                 }
@@ -107,39 +123,38 @@ class MainActivity : AppCompatActivity() {
             record.release()
             stopTimerThread()
 
-            runOnUiThread { btnRecognize.text = getString(R.string.recognizing) }
-
             val floatInputBuffer = FloatArray(recordingLength)
-
             for (i in 0 until recordingLength) {
                 floatInputBuffer[i] = recordingBuffer[i] / Short.MAX_VALUE.toFloat()
             }
 
-            val result: String? = recognize(floatInputBuffer)
+            val result: String = recognize(floatInputBuffer)
 
             runOnUiThread {
                 btnRecognize.isEnabled = true
                 btnRecognize.text = getString(R.string.start_record)
-                resultText.text = result ?: ""
+                resultText.text = result
             }
         }
         thread.start()
     }
 
-    private fun recognize(floatInputBuffer: FloatArray): String? {
+    private fun recognize(floatInputBuffer: FloatArray): String {
         if (module == null) {
-//            String filePath = Environment.getExternalStorageDirectory().getAbsolutePath();
-//            File file = new File(filePath + File.separator + "wav2vec2.ptl");
-//            Log.e(tag", "文件是否存在:" + file.exists());
-//            module = LiteModuleLoader.load(file.getAbsolutePath());
-            module = LiteModuleLoader.load(assetFilePath(applicationContext, "wav2vec2.ptl"))
+            val modelPath = assetFilePath(applicationContext, "speechcommand-demo.ptl")
+            Log.e(tag, "加载的模型文件目录:$modelPath")
+            module = LiteModuleLoader.load(modelPath)
         }
-        val wavInput = DoubleArray(recordingLength)
-        for (n in 0 until recordingLength) wavInput[n] = floatInputBuffer[n].toDouble()
-        val inTensorBuffer: FloatBuffer = Tensor.allocateFloatBuffer(recordingLength)
-        for (data in wavInput) inTensorBuffer.put(data.toFloat())
-        val inTensor: Tensor = Tensor.fromBlob(inTensorBuffer, longArrayOf(1, recordingLength.toLong()))
-        return module?.forward(IValue.from(inTensor))?.toStr()
+
+        val inTensor: Tensor = Tensor.fromBlob(floatInputBuffer, longArrayOf(1, recordingLength.toLong()))
+        val tensor = module?.forward(IValue.from(inTensor))?.toTensor()
+        Log.e(tag, "转译后结果:${tensor},${tensor!!.dataAsLongArray}")
+        var result: Long? = null
+        tensor.dataAsLongArray.forEach {
+            Log.e(tag, "解析后结果:$it")
+            result = it
+        }
+        return keyword[result] ?: keyword[11L]!!
     }
 
     private fun assetFilePath(context: Context, assetName: String): String? {
@@ -170,7 +185,7 @@ class MainActivity : AppCompatActivity() {
         timerTask?.cancel()
         timer = null
         timerTask = null
-        start = 1
+        start = 0
     }
 
     override fun onDestroy() {

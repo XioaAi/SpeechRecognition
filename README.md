@@ -1,8 +1,6 @@
-# 使用Wav2Vec2在Android上进行语音识别
-
 ## 集成步骤
 
-### 1. 把模型文件导入到 assets 目录内
+### 1. 把模型(ptl格式)文件导入到 assets 目录内
 
 ### 2. 添加 pytorch_android_lite 依赖
 
@@ -16,22 +14,32 @@ implementation 'org.pytorch:pytorch_android_lite:1.12.2'
 startRecord()
 ```
 
-### 4. 将流信息封装到 Tensor 中
+### 4. 将流信息转换成Float32位格式的并传递到 Tensor 中
 
 ```
-val inTensorBuffer: FloatBuffer = Tensor.allocateFloatBuffer(recordingLength)
+val inTensor: Tensor = Tensor.fromBlob(floatInputBuffer, longArrayOf(1, recordingLength.toLong()))
 ```
 
-### 5. 加载 module
+### 5. 加载模型获取到 Module
 
 ```
-module = LiteModuleLoader.load(assetFilePath(applicationContext, "wav2vec2.ptl"))
+val modelPath = assetFilePath(applicationContext, "andy-2-KS.ptl")
+module = LiteModuleLoader.load(modelPath)
 ```
 
-### 5. 调用 module 的 forward() 获取转译结果
+### 5. 调用 Module 的 forward() 获取转译结果 Tensor
 
 ```
-module?.forward(IValue.from(inTensor))?.toStr()
+val tensor = module?.forward(IValue.from(inTensor))?.toTensor()
+```
+
+### 6. 解析 Tensor，获取Tensor中的 dataAsLongArray 遍历，并从关键词集合中转译
+
+```
+tensor.dataAsLongArray.forEach {
+    result = it
+}
+keyword[result] ?: keyword[11L]!!
 ```
 
 
