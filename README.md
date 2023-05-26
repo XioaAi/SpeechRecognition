@@ -14,7 +14,7 @@ implementation 'org.pytorch:pytorch_android_lite:1.12.2'
 startRecord()
 ```
 
-### 4. 将流信息转换成Float32位格式的并传递到 Tensor 中
+### 4. 将流信息转换格式并传递到 Tensor 中
 
 ```
 val inTensor: Tensor = Tensor.fromBlob(floatInputBuffer, longArrayOf(1, recordingLength.toLong()))
