@@ -1,6 +1,10 @@
 ## 集成步骤
 
 ### 1. 把模型(ptl格式)文件导入到 assets 目录内
+```
+demo 模型下载地址
+https://qpt-dev-voices-1251626569.cos.ap-beijing.myqcloud.com/ican/speechcommand-demo.ptl
+```
 
 ### 2. 添加 pytorch_android_lite 依赖
 
