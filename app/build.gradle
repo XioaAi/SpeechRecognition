@@ -6,17 +6,20 @@ plugins {
 }
 
 android {
-    namespace 'com.neunit.speechrecognition'
+    namespace 'com.neunit.speech'
     compileSdk 32
 
     defaultConfig {
-        applicationId "com.neunit.speechrecognition"
+        applicationId "com.neunit.speech"
         minSdk 21
         targetSdk 32
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters 'armeabi-v7a'
+        }
     }
 
     buildTypes {
@@ -32,6 +35,12 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
 }
 
 dependencies {
@@ -44,5 +53,6 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
-    implementation 'org.pytorch:pytorch_android_lite:1.12.2'
+    implementation project(':translation')
+    implementation project(':commands')
 }

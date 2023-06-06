@@ -1,0 +1,7 @@
+<resources>
+    <string name="load_model">加载模型</string>
+    <string name="start_record">开始录音</string>
+    <string name="stop_record">停止录音</string>
+    <string name="choose_file">选择文件</string>
+    <string name="translating">转译中</string>
+</resources>

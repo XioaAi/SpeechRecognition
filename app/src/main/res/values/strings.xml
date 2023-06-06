@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">SpeechRecognition</string>
-    <string name="start_record">开始录音</string>
-    <string name="recognizing">转译中</string>
+    <string name="app_name">Speech demo</string>
+    <string name="speech_translation">语音转译</string>
+    <string name="speech_commands">语音命令识别</string>
 </resources>
