@@ -45,7 +45,7 @@ class SpeechCommandsActivity : AppCompatActivity() {
         btn_stop_record.setOnClickListener {
             isRecording.set(false)
             btn_start_record.text = resources.getString(R.string.start_record)
-            btn_start_record.isEnabled = false
+            btn_start_record.isEnabled = true
         }
     }
 

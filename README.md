@@ -92,6 +92,12 @@ tensor.dataAsLongArray.forEach {
 
 ConvertCommandUtils.covertCommand(result)
 ```
+### 8. 在退出时 停止录音，取消录音计时器, 关闭线程池任务
+```
+isRecording.set(false)
+```
+
+
 
 ## 语音转译（translation） 集成步骤
 
