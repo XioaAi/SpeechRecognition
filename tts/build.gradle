@@ -1,25 +1,21 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-android'
     id 'kotlin-android-extensions'
 }
 
 android {
-    namespace 'com.neunit.speech'
+    namespace 'com.neunit.tts'
     compileSdk 32
 
     defaultConfig {
-        applicationId "com.neunit.speech"
-        minSdk 23
+        minSdk 21
         targetSdk 32
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        ndk {
-            abiFilters 'armeabi-v7a'
-        }
     }
 
     buildTypes {
@@ -35,12 +31,6 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
-
-    sourceSets {
-        main {
-            jniLibs.srcDirs = ['libs']
-        }
-    }
 }
 
 dependencies {
@@ -52,8 +42,6 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
-
-    implementation project(':translation')
-    implementation project(':commands')
-    implementation project(':tts')
+    api 'com.squareup.okhttp3:okhttp:4.10.0'
+    api 'com.google.code.gson:gson:2.9.0'
 }
