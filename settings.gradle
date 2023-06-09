@@ -19,4 +19,3 @@ rootProject.name = "SpeechRecognition"
 include ':app'
 include ':translation'
 include ':commands'
-include ':tts'

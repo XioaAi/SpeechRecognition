@@ -55,5 +55,5 @@ dependencies {
 
     implementation project(':translation')
     implementation project(':commands')
-    implementation project(':tts')
+    implementation 'com.github.XioaAi:TTSSynthesis:1.0.0'
 }
