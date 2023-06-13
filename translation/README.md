@@ -49,7 +49,7 @@ whisperContext = WhisperContext.createContextFromAsset(application.assets, "mode
 ```
 val result = whisperContext?.transcribeData(floatArrayData)
 ```
-### 7. 在页面销毁时，调用release()释放资源
+### 8. 在页面销毁时，调用release()释放资源
 
 ```
 runBlocking {
