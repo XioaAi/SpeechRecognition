@@ -98,12 +98,14 @@ class SpeechCommandsActivity : AppCompatActivity() {
             val pool = Executors.newSingleThreadExecutor()
             while (isRecording.get()) {
                 val audioBuffer = ShortArray(320)
-                record.read(audioBuffer, 0, audioBuffer.size)
-                vadUtils?.checkAudioIsMute(audioBuffer, object : AudioNoMuteToMuteMuteCallBack {
-                    override fun callBack(data: ShortArray) {
-                        pool.execute(WorkThread(data, this@SpeechCommandsActivity, resultText))
-                    }
-                })
+                val read = record.read(audioBuffer, 0, audioBuffer.size)
+                if (AudioRecord.ERROR_INVALID_OPERATION != read) {
+                    vadUtils?.checkAudioIsMute(audioBuffer, object : AudioNoMuteToMuteMuteCallBack {
+                        override fun callBack(data: ShortArray) {
+                            pool.execute(WorkThread(data, this@SpeechCommandsActivity, resultText))
+                        }
+                    })
+                }
             }
 
             record.stop()
