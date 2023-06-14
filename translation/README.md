@@ -6,13 +6,13 @@
 
 把 so 包 复制到 libs目录中，并在 build.gradle 中配置，并在 manifest 文件中添加 录音 权限
 
-```
+```kotlin
 ndk {
     abiFilters 'armeabi-v7a'
 }
 ```
 
-```
+```kotlin
 <uses-permission android:name="android.permission.RECORD_AUDIO" />
 ```
 
@@ -22,7 +22,7 @@ ndk {
 
 ### 5. 通过 RiffWaveHelper 中的 decodeWaveFile() 方法 获取到文件的流信息
 
-```
+```kotlin
 suspend fun decodeWaveFile(file: File): FloatArray = withContext(scope.coroutineContext) {
      val baos = ByteArrayOutputStream()
      file.inputStream().use { it.copyTo(baos) }
@@ -40,18 +40,18 @@ suspend fun decodeWaveFile(file: File): FloatArray = withContext(scope.coroutine
 
 ### 6. 调用 LibWhisper.kt 中的 WhisperContext.createContextFromAsset() 方法加载模型文件，获取到 WhisperContext 对象
 
-```
+```kotlin
 whisperContext = WhisperContext.createContextFromAsset(application.assets, "models/${models[0]}")
 ```
 
 ### 7. 调用 WhisperContext 的 transcribeData() 方法，参数为  (5) 中获取到的流信息，返回值即为转译结果
 
-```
+```kotlin
 val result = whisperContext?.transcribeData(floatArrayData)
 ```
 ### 8. 在页面销毁时，调用release()释放资源
 
-```
+```kotlin
 runBlocking {
     whisperContext?.release()
 }
