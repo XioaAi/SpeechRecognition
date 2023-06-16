@@ -8,6 +8,7 @@ import android.media.AudioFormat
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +20,9 @@ import com.maple.recorder.recording.Recorder
 import com.neunit.translation.helper.FileHelper
 import com.neunit.translation.helper.RiffWaveHelper
 import com.neunit.winner.whisper.WhisperContext
+import io.microshow.rxffmpeg.RxFFmpegCommandList
+import io.microshow.rxffmpeg.RxFFmpegInvoke
+import io.microshow.rxffmpeg.RxFFmpegInvoke.IFFmpegListener
 import kotlinx.android.synthetic.main.activity_speech_translation.*
 import kotlinx.coroutines.*
 import java.io.File
@@ -27,6 +31,7 @@ import java.util.*
 class SpeechTranslationActivity : AppCompatActivity() {
 
     private var whisperContext: WhisperContext? = null
+    private val requestExternalPermissionCode = 12
     private val requestAudioPermissionCode = 13
     private var recorder: Recorder? = null
     private var recordFile: File? = null
@@ -41,15 +46,15 @@ class SpeechTranslationActivity : AppCompatActivity() {
 
         chooseFileLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             it.data?.data?.let { uri ->
-                val filePath = FileHelper.getFilePath(uri, this)
-                resultBuff.append("选择文件路径:$filePath\n")
+                val fileName = FileHelper.getFileName(uri, this)
+                val filePath = FileHelper.getFilePath(fileName, uri, this)
+                resultBuff.append("选择文件名称:$fileName\n")
                 translation_result.text = resultBuff
                 filePath.let { path ->
                     if (path.endsWith(".wav", true) && File(path).exists()) {
                         startTranslation(File(path))
                     } else {
-                        resultBuff.append("暂不支持此文件格式\n")
-                        translation_result.text = resultBuff
+                        changeFileFormatToWav(path)
                     }
                 }
             }
@@ -78,7 +83,12 @@ class SpeechTranslationActivity : AppCompatActivity() {
         }
 
         choose_file.setOnClickListener {
-            intentChooseFile()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE), requestExternalPermissionCode)
+            } else {
+                intentChooseFile()
+            }
         }
 
         resultBuff.append("开始加载模型\n")
@@ -107,11 +117,20 @@ class SpeechTranslationActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == requestAudioPermissionCode) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startRecord()
-            } else {
-                Toast.makeText(this, "请开启麦克风权限", Toast.LENGTH_LONG).show()
+        when (requestCode) {
+            requestAudioPermissionCode -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startRecord()
+                } else {
+                    Toast.makeText(this, "请开启麦克风权限", Toast.LENGTH_LONG).show()
+                }
+            }
+            requestExternalPermissionCode -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    intentChooseFile()
+                } else {
+                    Toast.makeText(this, "请开启读取存储卡权限", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
@@ -144,7 +163,12 @@ class SpeechTranslationActivity : AppCompatActivity() {
         record.text = getString(R.string.stop_record)
     }
 
+    /**
+     * 开始转译
+     */
     private fun startTranslation(file: File) {
+        record.isEnabled = false
+        choose_file.isEnabled = false
         CoroutineScope(Dispatchers.Main).launch {
             if (file.exists()) {
                 resultBuff.append("开始转译...\n")
@@ -161,13 +185,75 @@ class SpeechTranslationActivity : AppCompatActivity() {
                 resultBuff.append("文件不存在\n")
                 translation_result.text = resultBuff
             }
+            record.isEnabled = true
+            choose_file.isEnabled = true
         }
     }
+
+    /**
+     * 转换文件格式
+     */
+    private fun changeFileFormatToWav(filePath: String) {
+        val sourceFile = File(filePath)
+        if (!sourceFile.exists() || (sourceFile.exists() && sourceFile.length() <= 0)) {
+            resultBuff.append("文件已损坏\n")
+            translation_result.text = resultBuff
+            return
+        }
+        val index = filePath.lastIndexOf(".")
+        val wavFilePath = if (index != -1) {
+            "${filePath.substring(0, index)}.wav"
+        } else {
+            "$filePath.wav"
+        }
+        val wavFile = File(wavFilePath)
+        if (wavFile.exists() && wavFile.length() > 0) {
+            startTranslation(wavFile)
+        } else {
+            val commands = RxFFmpegCommandList().apply {
+                clearCommands()
+                append("ffmpeg")
+                append("-i")
+                append(filePath)
+                append("-acodec")
+                append("pcm_s16le")
+                append("-ac")
+                append("1")
+                append("-ar")
+                append("16000")
+                append(wavFilePath)
+            }.build()
+            RxFFmpegInvoke.getInstance().runCommand(commands, object : IFFmpegListener {
+                override fun onFinish() {
+                    resultBuff.append("转换文件格式成功\n")
+                    translation_result.text = resultBuff
+                    File(filePath).delete()
+                    startTranslation(wavFile)
+                }
+
+                override fun onProgress(progress: Int, progressTime: Long) {
+                    Log.e("FFmpeg", "转换文件进度:$progress")
+                }
+
+                override fun onCancel() {
+                    resultBuff.append("取消转换文件格式\n")
+                    translation_result.text = resultBuff
+                }
+
+                override fun onError(message: String?) {
+                    resultBuff.append("不支持该格式文件\n")
+                    translation_result.text = resultBuff
+                }
+
+            })
+        }
+    }
+
 
     override fun onDestroy() {
         recorder?.stopRecording()
         recorder = null
-        runBlocking {
+        CoroutineScope(Dispatchers.IO).launch {
             whisperContext?.release()
         }
         super.onDestroy()

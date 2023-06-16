@@ -52,7 +52,22 @@ val result = whisperContext?.transcribeData(floatArrayData)
 ### 8. 在页面销毁时，调用release()释放资源
 
 ```kotlin
-runBlocking {
+CoroutineScope(Dispatchers.IO).launch {
     whisperContext?.release()
 }
+```
+### 9. 可通过FFmpeg转换音频格式
+添加依赖
+```kotlin
+implementation 'com.github.microshow:RxFFmpeg:4.9.0-lite'
+```
+转换文件格式
+```kotlin
+changeFileFormatToWav()
+```
+
+### 10. 如果开启了代码混淆，且依赖了ffmpeg，需在proguard-rules.pro中添加如下代码
+```kotlin
+-dontwarn io.microshow.rxffmpeg.**
+-keep class io.microshow.rxffmpeg.**{*;}
 ```

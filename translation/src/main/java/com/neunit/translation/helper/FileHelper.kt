@@ -18,7 +18,7 @@ import java.io.InputStream
  */
 class FileHelper {
     companion object {
-        fun getFileName(uri: Uri, context: Context): String? {
+        fun getFileName(uri: Uri, context: Context): String {
             var result: String? = null
             var cursor: Cursor? = null
             try {
@@ -40,15 +40,13 @@ class FileHelper {
             } finally {
                 cursor?.close()
             }
-            return result
+            return result ?: System.currentTimeMillis().toString()
         }
 
-        fun getFilePath(uri: Uri, context: Context): String {
+        fun getFilePath(fileName: String, uri: Uri, context: Context): String {
             var fos: FileOutputStream? = null
             var ins: InputStream? = null
-            val fileName = getFileName(uri, context)
-            var path: String =
-                context.cacheDir.absolutePath + "/file_picker/" + (fileName ?: System.currentTimeMillis())
+            var path: String = context.cacheDir.absolutePath + "/file_picker/" + fileName
             val file = File(path)
             if (!file.exists()) {
                 file.parentFile?.mkdirs()
